@@ -1,0 +1,45 @@
+{
+  "campaign": "Token Harbor social launch",
+  "format": "PNG",
+  "dimensions": "1080x1080",
+  "generation": "Deterministic composition from existing Token Harbor artwork",
+  "brand_icon": "assets/guia-lighthouse-pixel.png",
+  "assets": [
+    {
+      "concept": "01-brand-hero",
+      "locale": "en",
+      "file": "output/promo/en/01-brand-hero-en.png",
+      "width": 1080,
+      "height": 1080,
+      "source": "game/public/assets/harbor-dawn.png",
+      "insert": null
+    },
+    {
+      "concept": "02-voyage-action",
+      "locale": "en",
+      "file": "output/promo/en/02-voyage-action-en.png",
+      "width": 1080,
+      "height": 1080,
+      "source": "game/public/assets/voyage-day.png",
+      "insert": "game/public/assets/fish/coral-snapper.png"
+    },
+    {
+      "concept": "03-pirate-encounter",
+      "locale": "en",
+      "file": "output/promo/en/03-pirate-encounter-en.png",
+      "width": 1080,
+      "height": 1080,
+      "source": "game/public/assets/voyage-night.png",
+      "insert": "game/public/assets/pirate-raider-left.png"
+    },
+    {
+      "concept": "04-harbor-growth",
+      "locale": "en",
+      "file": "output/promo/en/04-harbor-growth-en.png",
+      "width": 1080,
+      "height": 1080,
+      "source": "game/public/assets/harbor-night-clear.png",
+      "insert": "game/public/assets/fish/ghost-ray.png"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "token-harbor",
+  "version": "0.1.0+codex.20260721033209",
+  "description": "Turn Codex usage into\u822a\u529b and grow one shared harbor world while agents work.",
+  "author": {
+    "name": "Token Harbor"
+  },
+  "keywords": [
+    "game",
+    "productivity",
+    "codex",
+    "focus",
+    "harbor"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Token Harbor",
+    "shortDescription": "Let every Codex task grow your shared harbor world.",
+    "longDescription": "Token Harbor quietly converts local Codex token usage into\u822a\u529b. Spend it during agent wait time to open ports, launch voyages, complete orders, and grow one persistent archipelago shared by every project.",
+    "developerName": "Token Harbor",
+    "category": "Productivity",
+    "capabilities": [
+      "Local data",
+      "Game",
+      "Codex status"
+    ],
+    "defaultPrompt": [
+      "Open my Token Harbor.",
+      "Show my harbor status and available \u822a\u529b."
+    ],
+    "brandColor": "#0B6E75",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg"
+  },
+  "mcpServers": "./.mcp.json"
+}

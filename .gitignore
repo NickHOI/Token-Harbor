@@ -1,0 +1,15 @@
+game/node_modules/
+node_modules/
+.token-harbor-data/
+test-artifacts/
+tmp/
+*.log
+.env
+.env.*
+!.env.example
+design-qa.md
+design-reference-option-1.png
+scripts/build-promo-assets.py
+output/promo/zh-Hant/
+output/runtime-*.png
+output/runtime-*-report.json

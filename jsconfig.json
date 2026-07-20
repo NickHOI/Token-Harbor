@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "maxNodeModuleJsDepth": 0,
+    "noEmit": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "target": "ES2024",
+    "types": ["node", "react", "react-dom"]
+  },
+  "include": ["scripts/**/*.mjs", "game/src/**/*.js", "game/src/**/*.jsx", "game/src/**/*.d.ts"],
+  "exclude": ["game/dist", "game/node_modules", "node_modules", "test-artifacts"]
+}
