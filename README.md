@@ -37,6 +37,65 @@ Each player will keep a separate harbor. Planned social features include harbor 
 
 The current release is local-only and never displays fake friends or rankings. Stable player and world identities, action deduplication, revisions, an event outbox, SSE updates, and social rule contracts are already in place. See [the multiplayer architecture](docs/multiplayer-architecture.md) for the full design.
 
+## Install
+
+### Requirements
+
+- Windows 10 or 11.
+- The ChatGPT desktop app with Codex or Work mode and plugin support.
+- The `codex` CLI and Node.js 20 or newer available in PowerShell.
+
+### 1. Install the plugin
+
+Open PowerShell and run:
+
+```powershell
+codex plugin marketplace add NickHOI/Token-Harbor --ref main
+codex plugin add token-harbor@token-harbor
+```
+
+Restart the ChatGPT desktop app after installation so Codex can load the plugin, its hooks, and its local MCP server.
+
+### 2. Enable Sail Power
+
+The game works without token telemetry, but Sail Power will remain at zero until local telemetry is enabled. Clone the repository and run the privacy-preserving configuration script once:
+
+```powershell
+git clone https://github.com/NickHOI/Token-Harbor.git
+cd Token-Harbor
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-telemetry.ps1
+```
+
+The script backs up the existing Codex configuration, keeps prompt logging disabled, and sends numeric usage events only to the Token Harbor server on `127.0.0.1`. Restart Codex after the script completes.
+
+### 3. Open the harbor
+
+Start a new Codex task and ask:
+
+```text
+Open my Token Harbor.
+```
+
+Codex starts the local server and returns the harbor URL. You can also ask `Show my harbor status` for a text summary.
+
+### Update
+
+```powershell
+codex plugin marketplace upgrade token-harbor
+codex plugin add token-harbor@token-harbor
+```
+
+Restart the ChatGPT desktop app after updating.
+
+### Uninstall
+
+```powershell
+codex plugin remove token-harbor
+codex plugin marketplace remove token-harbor
+```
+
+Uninstalling the plugin does not delete the local harbor save or the telemetry configuration. Restore the backup created by `configure-telemetry.ps1` if you also want to remove the local telemetry endpoint.
+
 ## Run Locally
 
 In PowerShell:
