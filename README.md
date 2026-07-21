@@ -4,6 +4,12 @@
 
 Token Harbor is a local companion game for the time Codex spends thinking, reading files, and running tests. Tokens used by Codex quietly accumulate as Sail Power. Players decide when to spend that power on ports and voyages, while every Codex project contributes to one shared archipelago.
 
+## See It in Motion
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/657d9177-321b-4d8a-ba1f-4e0672e5e3b1" alt="Token Harbor gameplay demo showing Sail Power, fishing voyages, and a pirate encounter" width="400" />
+</p>
+
 ## What You Can Play
 
 - Start with one basic fishing skiff and zero coins, Sail Power, distance, token history, or port-construction progress. Real Codex token use funds the first voyage.
