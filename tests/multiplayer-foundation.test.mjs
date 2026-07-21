@@ -57,7 +57,7 @@ test("records sanitized domain events and supports incremental outbox reads", ()
   let state = freshState();
   state = applyAction(
     state,
-    { type: "allocate_port", portId: "coral", amount: 4, secret: "do-not-store" },
+    { type: "allocate_port", portId: "coral", amount: 4, secret: "redact" },
     { actionId: "action_event_001" }
   );
   state = applyAction(
