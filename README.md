@@ -1,5 +1,7 @@
 # Token Harbor
 
+![Token Harbor - Let your Codex work fill the sails](output/promo/en/01-brand-hero-en.png)
+
 Token Harbor is a local companion game for the time Codex spends thinking, reading files, and running tests. Tokens used by Codex quietly accumulate as Sail Power. Players decide when to spend that power on ports and voyages, while every Codex project contributes to one shared archipelago.
 
 ## What You Can Play

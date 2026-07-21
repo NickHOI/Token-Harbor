@@ -2,6 +2,8 @@
   "name": "token-harbor",
   "version": "0.1.0+codex.20260721033209",
   "description": "Turn Codex usage into\u822a\u529b and grow one shared harbor world while agents work.",
+  "repository": "https://github.com/NickHOI/Token-Harbor",
+  "license": "MIT",
   "author": {
     "name": "Token Harbor"
   },
