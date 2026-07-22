@@ -32,8 +32,14 @@
       "Show my harbor status and available \u822a\u529b."
     ],
     "brandColor": "#0B6E75",
+    "websiteURL": "https://github.com/NickHOI/Token-Harbor",
+    "privacyPolicyURL": "https://github.com/NickHOI/Token-Harbor#privacy--trust",
+    "termsOfServiceURL": "https://github.com/NickHOI/Token-Harbor/blob/main/LICENSE",
     "composerIcon": "./assets/icon.svg",
-    "logo": "./assets/logo.svg"
+    "logo": "./assets/logo.svg",
+    "screenshots": [
+      "./assets/guia-lighthouse-pixel.png"
+    ]
   },
   "mcpServers": "./.mcp.json"
 }
