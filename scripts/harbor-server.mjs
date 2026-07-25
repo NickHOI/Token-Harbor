@@ -250,10 +250,27 @@ function usageFromObject(value, seen = new Set()) {
   const normalized = Object.fromEntries(
     Object.entries(value).map(([key, item]) => [key.toLowerCase(), primitive(item)])
   );
-  const total = Number(normalized.total_tokens ?? normalized.totaltokens);
+  const total = Number(
+    normalized.total_tokens ??
+    normalized.totaltokens ??
+    normalized.total_token_count ??
+    normalized.totaltokencount ??
+    normalized.tool_token_count ??
+    normalized.tooltokencount
+  );
   if (Number.isFinite(total) && total > 0) return Math.floor(total);
-  const input = Number(normalized.input_tokens ?? normalized.inputtokens);
-  const output = Number(normalized.output_tokens ?? normalized.outputtokens);
+  const input = Number(
+    normalized.input_tokens ??
+    normalized.inputtokens ??
+    normalized.input_token_count ??
+    normalized.inputtokencount
+  );
+  const output = Number(
+    normalized.output_tokens ??
+    normalized.outputtokens ??
+    normalized.output_token_count ??
+    normalized.outputtokencount
+  );
   if ((Number.isFinite(input) && input > 0) || (Number.isFinite(output) && output > 0)) {
     return Math.floor((Number.isFinite(input) ? input : 0) + (Number.isFinite(output) ? output : 0));
   }

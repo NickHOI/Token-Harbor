@@ -3,7 +3,8 @@ import path from "node:path";
 export function shouldLaunchFloatingEntry(event, options = {}) {
   const platform = options.platform || process.platform;
   const enabled = options.enabled ?? process.env.TOKEN_HARBOR_FLOATING_ENTRY;
-  return platform === "win32" && enabled !== "0" && event?.hook_event_name === "SessionStart";
+  const launchEvents = new Set(["SessionStart", "UserPromptSubmit"]);
+  return platform === "win32" && enabled !== "0" && launchEvents.has(event?.hook_event_name);
 }
 
 export function floatingEntryLaunch(scriptDir) {
@@ -15,9 +16,8 @@ export function floatingEntryLaunch(scriptDir) {
       "Bypass",
       "-WindowStyle",
       "Hidden",
-      "-STA",
       "-File",
-      path.join(scriptDir, "harbor-floating-entry.ps1")
+      path.join(scriptDir, "start-floating-entry.ps1")
     ]
   };
 }

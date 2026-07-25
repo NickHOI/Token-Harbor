@@ -92,11 +92,43 @@ test("cold MCP status waits for the verified server and enforces command revisio
   assert.equal(path.resolve(health.dataDir), path.resolve(dataDir));
 
   const initial = await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
+  const telemetryPayload = {
+    resourceLogs: [{
+      scopeLogs: [{
+        logRecords: [{
+          attributes: [
+            { key: "event.name", value: { stringValue: "codex.sse_event" } },
+            { key: "event.kind", value: { stringValue: "response.completed" } },
+            { key: "event.id", value: { stringValue: "telemetry_protocol_001" } },
+            { key: "input_token_count", value: { intValue: "12345" } },
+            { key: "output_token_count", value: { intValue: "678" } },
+            { key: "cached_token_count", value: { intValue: "12000" } },
+            { key: "reasoning_token_count", value: { intValue: "42" } },
+            { key: "tool_token_count", value: { intValue: "13023" } }
+          ],
+          body: { stringValue: "codex.sse_event" }
+        }]
+      }]
+    }]
+  };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const telemetryResponse = await fetch(`http://127.0.0.1:${port}/v1/logs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(telemetryPayload)
+    });
+    assert.equal(telemetryResponse.status, 200);
+  }
+  const credited = await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
+  assert.equal(credited.totalTokens, initial.totalTokens + 13023);
+  assert.equal(credited.lastTokenCredit, 13023);
+  assert.equal(credited.sailingPower, initial.sailingPower + 1.3);
+
   const command = {
     actionId: "action_protocol_001",
     actorId: initial.multiplayer.player.id,
     worldId: initial.multiplayer.world.id,
-    baseRevision: initial.multiplayer.revision,
+    baseRevision: credited.multiplayer.revision,
     type: "game.acknowledge_recovery",
     payload: {}
   };
@@ -107,7 +139,7 @@ test("cold MCP status waits for the verified server and enforces command revisio
   });
   assert.equal(appliedResponse.status, 200);
   const applied = await appliedResponse.json();
-  assert.equal(applied.multiplayer.revision, initial.multiplayer.revision + 1);
+  assert.equal(applied.multiplayer.revision, credited.multiplayer.revision + 1);
 
   const duplicateResponse = await fetch(`http://127.0.0.1:${port}/api/action`, {
     method: "POST",

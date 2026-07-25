@@ -1,5 +1,7 @@
 param(
-  [switch]$Probe
+  [switch]$Probe,
+  [switch]$HideConsole,
+  [switch]$FollowCodexWindow
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +15,8 @@ $dataDir = if ($env:TOKEN_HARBOR_DATA_DIR) {
 } elseif ($env:PLUGIN_DATA) {
   $env:PLUGIN_DATA
 } else {
-  Join-Path $pluginRoot ".token-harbor-data"
+  $localAppData = if ($env:LOCALAPPDATA) { $env:LOCALAPPDATA } else { Join-Path $HOME "AppData\Local" }
+  Join-Path $localAppData "TokenHarbor\data"
 }
 $dataDir = [IO.Path]::GetFullPath($dataDir)
 $positionPath = Join-Path $dataDir "floating-entry.json"
@@ -31,6 +34,36 @@ if ($Probe) {
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName WindowsBase
+Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class TokenHarborWindow {
+  public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+  [DllImport("kernel32.dll")]
+  public static extern IntPtr GetConsoleWindow();
+
+  [DllImport("user32.dll")]
+  public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+  [DllImport("user32.dll")]
+  public static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+
+  [DllImport("user32.dll")]
+  public static extern bool IsWindowVisible(IntPtr hWnd);
+
+  [DllImport("user32.dll")]
+  public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+}
+'@
+
+if ($HideConsole) {
+  $consoleHandle = [TokenHarborWindow]::GetConsoleWindow()
+  if ($consoleHandle -ne [IntPtr]::Zero) {
+    [void][TokenHarborWindow]::ShowWindowAsync($consoleHandle, 0)
+  }
+}
 
 $createdNew = $false
 $mutex = [Threading.Mutex]::new($true, "Local\TokenHarborFloatingEntry", [ref]$createdNew)
@@ -39,18 +72,32 @@ if (-not $createdNew) {
   exit 0
 }
 
-function Test-HarborServer {
+function Get-HarborHealth {
   try {
-    $health = Invoke-RestMethod -Uri $healthUrl -TimeoutSec 1
-    $healthDataDir = [IO.Path]::GetFullPath([string]$health.dataDir)
-    return [bool]($health.ok -and $health.service -eq "token-harbor" -and $health.version -eq "0.1.0" -and [int]$health.port -eq $harborPort -and $healthDataDir -eq $dataDir)
+    return Invoke-RestMethod -Uri $healthUrl -TimeoutSec 1
   } catch {
-    return $false
+    return $null
   }
+}
+
+function Test-HarborServer {
+  $health = Get-HarborHealth
+  if (-not $health) { return $false }
+  $healthDataDir = [IO.Path]::GetFullPath([string]$health.dataDir)
+  return [bool]($health.ok -and $health.service -eq "token-harbor" -and $health.version -eq "0.1.0" -and [int]$health.port -eq $harborPort -and $healthDataDir -eq $dataDir)
 }
 
 function Open-Harbor {
   if (-not (Test-HarborServer)) {
+    if (Get-HarborHealth) {
+      [System.Windows.MessageBox]::Show(
+        "Token Harbor found another local data folder on port $harborPort. Close the older Token Harbor server and try again.",
+        "Token Harbor",
+        [System.Windows.MessageBoxButton]::OK,
+        [System.Windows.MessageBoxImage]::Warning
+      ) | Out-Null
+      return
+    }
     Start-Process -FilePath "node" -ArgumentList "scripts/harbor-server.mjs" -WorkingDirectory $pluginRoot -WindowStyle Hidden
     for ($attempt = 0; $attempt -lt 10; $attempt += 1) {
       Start-Sleep -Milliseconds 150
@@ -72,8 +119,13 @@ function Open-Harbor {
       Start-Process $harborUrl
     }
   } else {
+    $detail = if (Get-Command node -ErrorAction SilentlyContinue) {
+      "Token Harbor could not start. Check whether port $harborPort is available and try again."
+    } else {
+      "Token Harbor could not start because Node.js was not found."
+    }
     [System.Windows.MessageBox]::Show(
-      "Token Harbor could not start. Check that Node.js is installed and try again.",
+      $detail,
       "Token Harbor",
       [System.Windows.MessageBoxButton]::OK,
       [System.Windows.MessageBoxImage]::Warning
@@ -95,6 +147,25 @@ function Save-Position([double]$Left, [double]$Top) {
   [pscustomobject]@{ left = [Math]::Round($Left, 1); top = [Math]::Round($Top, 1) } |
     ConvertTo-Json -Compress |
     Set-Content -LiteralPath $positionPath -Encoding UTF8
+}
+
+function Test-CodexWindow {
+  $codexProcessIds = @(Get-Process -Name "ChatGPT" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id)
+  if (-not $codexProcessIds.Count) { return $false }
+  $script:codexWindowFound = $false
+  $callback = [TokenHarborWindow+EnumWindowsProc]{
+    param([IntPtr]$handle, [IntPtr]$state)
+    if (-not [TokenHarborWindow]::IsWindowVisible($handle)) { return $true }
+    $ownerPid = [uint32]0
+    [void][TokenHarborWindow]::GetWindowThreadProcessId($handle, [ref]$ownerPid)
+    if ($codexProcessIds -contains [int]$ownerPid) {
+      $script:codexWindowFound = $true
+      return $false
+    }
+    return $true
+  }
+  [void][TokenHarborWindow]::EnumWindows($callback, [IntPtr]::Zero)
+  return $script:codexWindowFound
 }
 
 [xml]$xaml = @'
@@ -345,6 +416,22 @@ $readoutTimer.Add_Tick({ Update-HarborReadout })
 $readoutTimer.Start()
 Update-HarborReadout
 
+$codexWindowTimer = $null
+if ($FollowCodexWindow) {
+  $script:codexWindowSeen = Test-CodexWindow
+  $codexWindowDeadline = [DateTime]::UtcNow.AddSeconds(20)
+  $codexWindowTimer = [System.Windows.Threading.DispatcherTimer]::new()
+  $codexWindowTimer.Interval = [TimeSpan]::FromSeconds(2)
+  $codexWindowTimer.Add_Tick({
+    if (Test-CodexWindow) {
+      $script:codexWindowSeen = $true
+    } elseif ($script:codexWindowSeen -or [DateTime]::UtcNow -ge $codexWindowDeadline) {
+      $window.Close()
+    }
+  })
+  $codexWindowTimer.Start()
+}
+
 $window.Opacity = 0.94
 $buttonShell.Add_MouseEnter({
   $window.Opacity = 1
@@ -396,13 +483,16 @@ $window.Add_KeyDown({
 })
 $window.Add_Closed({
   $readoutTimer.Stop()
+  if ($codexWindowTimer) { $codexWindowTimer.Stop() }
   Save-Position $window.Left $window.Top
 })
 
 $application = [System.Windows.Application]::new()
 $application.ShutdownMode = [System.Windows.ShutdownMode]::OnMainWindowClose
+$application.MainWindow = $window
 try {
-  [void]$application.Run($window)
+  $window.Show()
+  [void]$application.Run()
 } finally {
   if ($createdNew) { [void]$mutex.ReleaseMutex() }
   $mutex.Dispose()

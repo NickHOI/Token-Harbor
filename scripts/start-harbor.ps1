@@ -15,7 +15,8 @@ $dataDir = if ($env:TOKEN_HARBOR_DATA_DIR) {
 } elseif ($env:PLUGIN_DATA) {
   [IO.Path]::GetFullPath($env:PLUGIN_DATA)
 } else {
-  [IO.Path]::GetFullPath((Join-Path $pluginRoot ".token-harbor-data"))
+  $localAppData = if ($env:LOCALAPPDATA) { $env:LOCALAPPDATA } else { Join-Path $HOME "AppData\Local" }
+  [IO.Path]::GetFullPath((Join-Path $localAppData "TokenHarbor\data"))
 }
 
 function Get-HarborHealth {
@@ -29,12 +30,11 @@ function Test-HarborIdentity($Health) {
 }
 
 if (-not $NoFloatingEntry) {
-  $floatingScript = Join-Path $PSScriptRoot "harbor-floating-entry.ps1"
+  $floatingScript = Join-Path $PSScriptRoot "start-floating-entry.ps1"
   $floatingArguments = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
     "-WindowStyle", "Hidden",
-    "-STA",
     "-File", "`"$floatingScript`""
   )
   Start-Process -FilePath "powershell.exe" -ArgumentList $floatingArguments -WindowStyle Hidden

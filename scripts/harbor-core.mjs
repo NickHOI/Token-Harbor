@@ -433,7 +433,12 @@ function normalizeState(raw) {
 export function getDataDir() {
   const configured = process.env.TOKEN_HARBOR_DATA_DIR || process.env.PLUGIN_DATA;
   const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  return configured ? path.resolve(configured) : path.join(pluginRoot, ".token-harbor-data");
+  if (configured) return path.resolve(configured);
+  if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA || path.join(process.env.USERPROFILE || pluginRoot, "AppData", "Local");
+    return path.join(localAppData, "TokenHarbor", "data");
+  }
+  return path.join(pluginRoot, ".token-harbor-data");
 }
 
 export function getStatePath() {

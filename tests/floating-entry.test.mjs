@@ -5,9 +5,11 @@ import test from "node:test";
 import { floatingEntryLaunch, shouldLaunchFloatingEntry } from "../scripts/floating-entry-core.mjs";
 
 const floatingEntryScript = fs.readFileSync(new URL("../scripts/harbor-floating-entry.ps1", import.meta.url), "utf8");
+const floatingEntryLauncher = fs.readFileSync(new URL("../scripts/start-floating-entry.ps1", import.meta.url), "utf8");
 
 test("launches the floating entry once at Windows session start", () => {
   assert.equal(shouldLaunchFloatingEntry({ hook_event_name: "SessionStart" }, { platform: "win32" }), true);
+  assert.equal(shouldLaunchFloatingEntry({ hook_event_name: "UserPromptSubmit" }, { platform: "win32" }), true);
   assert.equal(shouldLaunchFloatingEntry({ hook_event_name: "PostToolUse" }, { platform: "win32" }), false);
   assert.equal(shouldLaunchFloatingEntry({ hook_event_name: "SessionStart" }, { platform: "darwin" }), false);
 });
@@ -19,12 +21,17 @@ test("allows users to disable the floating entry", () => {
   );
 });
 
-test("starts PowerShell in a hidden STA process", () => {
+test("starts a hidden broker that launches the WPF entry on the interactive desktop", () => {
   const launch = floatingEntryLaunch(path.resolve("scripts"));
   assert.equal(launch.command, "powershell.exe");
-  assert.ok(launch.args.includes("-STA"));
   assert.ok(launch.args.includes("Hidden"));
-  assert.match(launch.args.at(-1), /harbor-floating-entry\.ps1$/);
+  assert.match(launch.args.at(-1), /start-floating-entry\.ps1$/);
+  assert.match(floatingEntryLauncher, /Register-ScheduledTask/);
+  assert.match(floatingEntryLauncher, /Start-ScheduledTask/);
+  assert.doesNotMatch(floatingEntryLauncher, /New-ScheduledTaskTrigger/);
+  assert.match(floatingEntryLauncher, /harbor-floating-entry\.ps1/);
+  assert.match(floatingEntryLauncher, /-HideConsole/);
+  assert.match(floatingEntryLauncher, /-FollowCodexWindow/);
 });
 
 test("opens the harbor as a standalone browser app with a safe fallback", () => {
@@ -37,6 +44,20 @@ test("shows live Sail Power and connection state on the floating entry", () => {
   assert.match(floatingEntryScript, /sailingPower/);
   assert.match(floatingEntryScript, /PowerValue/);
   assert.match(floatingEntryScript, /StatusLight/);
+});
+
+test("hides the console without suppressing the WPF launcher", () => {
+  assert.match(floatingEntryScript, /GetConsoleWindow/);
+  assert.match(floatingEntryScript, /ShowWindowAsync/);
+  assert.match(floatingEntryScript, /\$window\.Show\(\)/);
+  assert.match(floatingEntryScript, /\$application\.Run\(\)/);
+});
+
+test("closes the floating entry when the Codex desktop window closes", () => {
+  assert.match(floatingEntryScript, /function Test-CodexWindow/);
+  assert.match(floatingEntryScript, /Get-Process -Name "ChatGPT"/);
+  assert.match(floatingEntryScript, /EnumWindows/);
+  assert.match(floatingEntryScript, /\$window\.Close\(\)/);
 });
 
 test("labels Sail Power and renders a recognizable animated lighthouse beacon", () => {
